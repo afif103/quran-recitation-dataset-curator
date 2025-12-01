@@ -1,8 +1,8 @@
 import os
 import re
+import requests
 from config.settings import settings
 import logging
-from groq import Groq
 
 logger = logging.getLogger(__name__)
 
@@ -12,20 +12,29 @@ async def validate_with_llm(text: str) -> str:
         logger.info("Groq API key not set, skipping LLM validation")
         return text
     try:
-        client = Groq(api_key=settings.groq_api_key)
-        response = client.chat.completions.create(
-            model="llama3-8b-8192",  # Use a Groq model
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an expert in Arabic text normalization. Ensure the text is in proper Arabic script.",
-                },
-                {"role": "user", "content": f"Normalize this Arabic text: {text}"},
-            ],
-            max_tokens=500,
-            temperature=0.1,
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {settings.groq_api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "llama3-8b-8192",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are an expert in Arabic text normalization. Ensure the text is in proper Arabic script.",
+                    },
+                    {"role": "user", "content": f"Normalize this Arabic text: {text}"},
+                ],
+                "max_tokens": 500,
+                "temperature": 0.1,
+            },
+            timeout=30,
         )
-        normalized = response.choices[0].message.content.strip()
+        response.raise_for_status()
+        result = response.json()
+        normalized = result["choices"][0]["message"]["content"].strip()
         return normalized
     except Exception as e:
         logger.warning(f"LLM validation failed: {e}")
