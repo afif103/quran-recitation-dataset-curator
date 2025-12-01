@@ -1,6 +1,5 @@
 from pydantic import BaseSettings
 from typing import Optional
-import os
 
 
 class Settings(BaseSettings):
@@ -36,7 +35,7 @@ def get_settings():
                 aws_secret_access_key=st.secrets.get("AWS_SECRET_ACCESS_KEY"),
                 s3_bucket_name=st.secrets.get("S3_BUCKET_NAME"),
             )
-    except ImportError:
+    except (ImportError, FileNotFoundError):
         pass
 
     # Fallback to .env

@@ -1,7 +1,5 @@
-import os
 import asyncio
 from gtts import gTTS
-from config.settings import settings
 import logging
 
 logger = logging.getLogger(__name__)

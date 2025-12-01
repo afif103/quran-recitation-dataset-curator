@@ -7,7 +7,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+async def is_ollama_available() -> bool:
+    try:
+        response = requests.get("http://localhost:11434/api/tags", timeout=5)
+        return response.status_code == 200
+    except Exception:
+        return False
+
+
 async def validate_with_llm(text: str) -> str:
+    if not await is_ollama_available():
+        logger.info("Ollama not available, skipping LLM validation")
+        return text
     try:
         response = requests.post(
             "http://localhost:11434/api/generate",
@@ -22,7 +33,7 @@ async def validate_with_llm(text: str) -> str:
         result = response.json()
         return result.get("response", "").strip()
     except Exception as e:
-        logger.error(f"LLM validation failed: {e}")
+        logger.warning(f"LLM validation failed: {e}")
         return text  # Fallback to original
 
 
