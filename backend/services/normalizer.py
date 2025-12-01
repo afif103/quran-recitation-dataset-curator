@@ -11,6 +11,9 @@ async def validate_with_llm(text: str) -> str:
     if not settings.groq_api_key:
         logger.info("Groq API key not set, skipping LLM validation")
         return text
+    # Limit text to first 1000 chars to avoid API limits
+    text = text[:1000]
+    logger.info(f"LLM processing text of length {len(text)}")
     # Chunk the text to avoid token limits
     chunk_size = len(text)  # Process as one chunk for now
     chunks = [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
