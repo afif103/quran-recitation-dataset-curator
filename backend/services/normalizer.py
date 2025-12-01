@@ -14,11 +14,11 @@ async def validate_with_llm(text: str) -> str:
     # Limit text to first 1000 chars to avoid API limits
     text = text[:1000]
     logger.info(f"LLM processing text of length {len(text)}")
-    # Chunk the text to avoid token limits
-    chunk_size = len(text)  # Process as one chunk for now
+    # Chunk the text to avoid token limits, but process only first chunk to limit API usage
+    chunk_size = 1000
     chunks = [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
     normalized_chunks = []
-    for chunk in chunks:
+    for chunk in chunks[:1]:  # Only process first chunk
         logger.info(f"Processing chunk of length {len(chunk)}")
         try:
             response = requests.post(
