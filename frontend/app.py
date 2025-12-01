@@ -31,7 +31,22 @@ if page == "Process Data":
                     st.error(
                         "KAGGLE_API_KEY not set. Please add it to Streamlit secrets or .env."
                     )
-                    return
+                    st.stop()
+                if not settings.groq_api_key:
+                    st.warning(
+                        "GROQ_API_KEY not set. LLM normalization will be skipped."
+                    )
+
+                # Step 1: Download
+                st.write("Step 1: Downloading dataset...")
+                sources = [
+                    "https://www.kaggle.com/datasets/imrankhan197/the-quran-dataset"
+                ]
+                files = asyncio.run(download_datasets(sources))
+                st.write(f"Downloaded: {files}")
+                if not files:
+                    st.error("Download failed. Check KAGGLE_API_KEY and network.")
+                    st.stop()
                 if not settings.groq_api_key:
                     st.warning(
                         "GROQ_API_KEY not set. LLM normalization will be skipped."
