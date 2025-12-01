@@ -11,34 +11,43 @@ async def validate_with_llm(text: str) -> str:
     if not settings.groq_api_key:
         logger.info("Groq API key not set, skipping LLM validation")
         return text
-    try:
-        response = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {settings.groq_api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": "llama3-8b-8192",
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "You are an expert in Arabic text normalization. Ensure the text is in proper Arabic script.",
-                    },
-                    {"role": "user", "content": f"Normalize this Arabic text: {text}"},
-                ],
-                "max_tokens": 500,
-                "temperature": 0.1,
-            },
-            timeout=30,
-        )
-        response.raise_for_status()
-        result = response.json()
-        normalized = result["choices"][0]["message"]["content"].strip()
-        return normalized
-    except Exception as e:
-        logger.warning(f"LLM validation failed: {e}")
-        return text  # Fallback to original
+    # Chunk the text to avoid token limits
+    chunk_size = 1000
+    chunks = [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
+    normalized_chunks = []
+    for chunk in chunks:
+        try:
+            response = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.groq_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "llama3-8b-8192",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are an expert in Arabic text normalization. Ensure the text is in proper Arabic script.",
+                        },
+                        {
+                            "role": "user",
+                            "content": f"Normalize this Arabic text: {chunk}",
+                        },
+                    ],
+                    "max_tokens": 500,
+                    "temperature": 0.1,
+                },
+                timeout=30,
+            )
+            response.raise_for_status()
+            result = response.json()
+            normalized = result["choices"][0]["message"]["content"].strip()
+            normalized_chunks.append(normalized)
+        except Exception as e:
+            logger.warning(f"LLM validation failed for chunk: {e}")
+            normalized_chunks.append(chunk)  # Fallback to original chunk
+    return "".join(normalized_chunks)
 
 
 async def normalize_transcripts(transcript_files: list[str]) -> list[str]:
