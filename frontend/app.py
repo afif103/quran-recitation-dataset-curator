@@ -25,7 +25,7 @@ if page == "Process Data":
         "**Run Full Pipeline**: Automatically downloads the Quran dataset from Kaggle, normalizes transcripts, organizes audio, extracts metadata, and converts to JSONL. No manual inputs needed."
     )
     if st.button("Run Full Pipeline"):
-        with st.spinner("Running full pipeline..."):
+        with st.spinner("Running full pipeline... This may take a few minutes."):
             try:
                 # Check for API keys
                 if not settings.kaggle_api_key:
@@ -187,152 +187,159 @@ elif page == "View Data":
 
     tab1, tab2, tab3, tab4 = st.tabs(["Raw Data", "Transcripts", "Audio", "JSONL"])
 
-    with tab1:
-        st.subheader("Raw Data Files")
+    @st.cache_data
+    def get_raw_files():
         raw_dir = "data/raw"
         if os.path.exists(raw_dir):
-            raw_files = [
+            return [
                 f
                 for f in os.listdir(raw_dir)
                 if os.path.isfile(os.path.join(raw_dir, f))
             ]
-            if raw_files:
-                filter_name = st.text_input("Filter by name", "", key="raw_filter")
-                filtered_files = (
-                    [f for f in raw_files if filter_name.lower() in f.lower()]
-                    if filter_name
-                    else raw_files
-                )
-                selected_raw = st.selectbox(
-                    "Select raw file", filtered_files, key="raw_select"
-                )
-                if selected_raw:
-                    file_path = os.path.join(raw_dir, selected_raw)
-                    file_size = os.path.getsize(file_path)
-                    st.write(f"File size: {file_size} bytes")
-                    if selected_raw.endswith(".txt") or selected_raw.endswith(".csv"):
-                        with open(file_path, "r", encoding="utf-8") as f:
-                            content = f.read()[:1000]  # First 1000 chars
-                        st.text_area("File Content Preview", content, height=300)
-                    else:
-                        st.info("Binary file, cannot preview.")
-            else:
-                st.info("No raw files found.")
+        return []
+
+    with tab1:
+        st.subheader("Raw Data Files")
+        raw_files = get_raw_files()
+        if raw_files:
+            filter_name = st.text_input("Filter by name", "", key="raw_filter")
+            filtered_files = (
+                [f for f in raw_files if filter_name.lower() in f.lower()]
+                if filter_name
+                else raw_files
+            )
+            selected_raw = st.selectbox(
+                "Select raw file", filtered_files, key="raw_select"
+            )
+            if selected_raw:
+                file_path = os.path.join("data/raw", selected_raw)
+                file_size = os.path.getsize(file_path)
+                st.write(f"File size: {file_size} bytes")
+                if selected_raw.endswith(".txt") or selected_raw.endswith(".csv"):
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        content = f.read()[:1000]  # First 1000 chars
+                    st.text_area("File Content Preview", content, height=300)
+                else:
+                    st.info("Binary file, cannot preview.")
         else:
-            st.info("Raw data directory not found.")
+            st.info("No raw files found.")
+
+    @st.cache_data
+    def get_transcript_files():
+        transcript_dir = "data/processed/transcripts"
+        if os.path.exists(transcript_dir):
+            return [f for f in os.listdir(transcript_dir) if f.endswith(".txt")]
+        return []
 
     with tab2:
         st.subheader("Processed Transcripts")
-        transcript_dir = "data/processed/transcripts"
-        if os.path.exists(transcript_dir):
-            transcript_files = [
-                f for f in os.listdir(transcript_dir) if f.endswith(".txt")
-            ]
-            if transcript_files:
-                filter_name = st.text_input(
-                    "Filter by name", "", key="transcript_filter"
+        transcript_files = get_transcript_files()
+        if transcript_files:
+            filter_name = st.text_input("Filter by name", "", key="transcript_filter")
+            filtered_files = (
+                [f for f in transcript_files if filter_name.lower() in f.lower()]
+                if filter_name
+                else transcript_files
+            )
+            selected_transcript = st.selectbox(
+                "Select transcript file", filtered_files, key="transcript_select"
+            )
+            if selected_transcript:
+                file_path = os.path.join(
+                    "data/processed/transcripts", selected_transcript
                 )
-                filtered_files = (
-                    [f for f in transcript_files if filter_name.lower() in f.lower()]
-                    if filter_name
-                    else transcript_files
-                )
-                selected_transcript = st.selectbox(
-                    "Select transcript file", filtered_files, key="transcript_select"
-                )
-                if selected_transcript:
-                    with open(
-                        os.path.join(transcript_dir, selected_transcript),
-                        "r",
-                        encoding="utf-8",
-                    ) as f:
-                        content = f.read()
-                    st.write(f"File size: {len(content)} characters")
-                    if content:
-                        st.text_area("Transcript Content", content[:1000], height=300)
-                        if len(content) > 1000:
-                            st.info("Showing first 1000 characters. File is larger.")
-                    else:
-                        st.warning("File is empty.")
-            else:
-                st.info("No processed transcripts found.")
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                st.write(f"File size: {len(content)} characters")
+                if content:
+                    st.text_area("Transcript Content", content[:1000], height=300)
+                    if len(content) > 1000:
+                        st.info("Showing first 1000 characters. File is larger.")
+                else:
+                    st.warning("File is empty.")
         else:
-            st.info("Processed transcripts directory not found.")
+            st.info("No processed transcripts found.")
 
-    with tab3:
-        st.subheader("Generated Audio Files")
+    @st.cache_data
+    def get_audio_files():
         audio_dir = "data/processed/audio"
         if os.path.exists(audio_dir):
-            audio_files = [
+            return [
                 f
                 for f in os.listdir(audio_dir)
                 if f.endswith(".wav") or f.endswith(".mp3")
             ]
-            if audio_files:
-                filter_name = st.text_input("Filter by name", "", key="audio_filter")
-                filtered_files = (
-                    [f for f in audio_files if filter_name.lower() in f.lower()]
-                    if filter_name
-                    else audio_files
-                )
-                selected_audio = st.selectbox(
-                    "Select audio file", filtered_files, key="audio_select"
-                )
-                if selected_audio:
-                    audio_path = os.path.join(audio_dir, selected_audio)
-                    st.audio(
-                        audio_path,
-                        format="audio/mp3",  # gTTS generates MP3
-                    )
-                    file_size = os.path.getsize(audio_path)
-                    st.write(f"File size: {file_size} bytes")
-                    # Try to get duration
-                    try:
-                        if selected_audio.endswith(".mp3"):
-                            from mutagen.mp3 import MP3
+        return []
 
-                            audio = MP3(audio_path)
-                            duration = audio.info.length
-                        elif selected_audio.endswith(".wav"):
-                            import wave
+    with tab3:
+        st.subheader("Generated Audio Files")
+        audio_files = get_audio_files()
+        if audio_files:
+            filter_name = st.text_input("Filter by name", "", key="audio_filter")
+            filtered_files = (
+                [f for f in audio_files if filter_name.lower() in f.lower()]
+                if filter_name
+                else audio_files
+            )
+            selected_audio = st.selectbox(
+                "Select audio file", filtered_files, key="audio_select"
+            )
+            if selected_audio:
+                audio_path = os.path.join("data/processed/audio", selected_audio)
+                st.audio(
+                    audio_path,
+                    format="audio/mp3",  # gTTS generates MP3
+                )
+                file_size = os.path.getsize(audio_path)
+                st.write(f"File size: {file_size} bytes")
+                # Try to get duration
+                try:
+                    if selected_audio.endswith(".mp3"):
+                        from mutagen.mp3 import MP3
 
-                            with wave.open(audio_path, "rb") as wav:
-                                frames = wav.getnframes()
-                                rate = wav.getframerate()
-                                duration = frames / float(rate)
-                        else:
-                            duration = None
-                        if duration:
-                            st.write(f"Duration: {duration:.2f} seconds")
-                        else:
-                            st.write("Duration: Unable to determine")
-                    except Exception as e:
-                        st.write(f"Duration: Unable to determine ({e})")
-            else:
-                st.info("No audio files found.")
+                        audio = MP3(audio_path)
+                        duration = audio.info.length
+                    elif selected_audio.endswith(".wav"):
+                        import wave
+
+                        with wave.open(audio_path, "rb") as wav:
+                            frames = wav.getnframes()
+                            rate = wav.getframerate()
+                            duration = frames / float(rate)
+                    else:
+                        duration = None
+                    if duration:
+                        st.write(f"Duration: {duration:.2f} seconds")
+                    else:
+                        st.write("Duration: Unable to determine")
+                except Exception as e:
+                    st.write(f"Duration: Unable to determine ({e})")
         else:
-            st.info("Processed audio directory not found.")
+            st.info("No audio files found.")
 
-    with tab4:
-        st.subheader("JSONL Dataset Preview")
+    @st.cache_data
+    def get_jsonl_data():
         jsonl_path = "data/processed/dataset.jsonl"
         if os.path.exists(jsonl_path):
             with open(jsonl_path, "r", encoding="utf-8") as f:
                 lines = f.readlines()
-            total_lines = len(lines)
-            st.write(f"Total entries: {total_lines}")
-            if total_lines > 0:
-                try:
-                    import json
+            return len(lines), lines[0] if lines else None
+        return 0, None
 
-                    first_entry = json.loads(lines[0])
-                    st.json(first_entry)  # Show parsed JSON
-                except json.JSONDecodeError:
-                    st.text_area("JSONL Preview", lines[0][:500], height=300)
-            else:
-                st.info("No entries in JSONL.")
+    with tab4:
+        st.subheader("JSONL Dataset Preview")
+        total_lines, first_line = get_jsonl_data()
+        st.write(f"Total entries: {total_lines}")
+        if total_lines > 0 and first_line:
+            try:
+                import json
+
+                first_entry = json.loads(first_line)
+                st.json(first_entry)  # Show parsed JSON
+            except json.JSONDecodeError:
+                st.text_area("JSONL Preview", first_line[:500], height=300)
         else:
-            st.info("JSONL file not found.")
+            st.info("No entries in JSONL.")
 
 st.header("Export Data")
 st.info(
