@@ -12,7 +12,7 @@ async def validate_with_llm(text: str) -> str:
         logger.info("Groq API key not set, skipping LLM validation")
         return text
     # Chunk the text to avoid token limits
-    chunk_size = 1000
+    chunk_size = 500
     chunks = [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
     normalized_chunks = []
     for chunk in chunks:
@@ -24,18 +24,14 @@ async def validate_with_llm(text: str) -> str:
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": "llama3-8b-8192",
+                    "model": "llama3-70b-8192",
                     "messages": [
                         {
-                            "role": "system",
-                            "content": "You are an expert in Arabic text normalization. Ensure the text is in proper Arabic script.",
-                        },
-                        {
                             "role": "user",
-                            "content": f"Normalize this Arabic text: {chunk}",
+                            "content": f"You are an expert in Arabic text normalization. Ensure the text is in proper Arabic script. Normalize this Arabic text: {chunk}",
                         },
                     ],
-                    "max_tokens": 500,
+                    "max_tokens": 300,
                     "temperature": 0.1,
                 },
                 timeout=30,
@@ -44,6 +40,11 @@ async def validate_with_llm(text: str) -> str:
             result = response.json()
             normalized = result["choices"][0]["message"]["content"].strip()
             normalized_chunks.append(normalized)
+        except requests.exceptions.HTTPError as e:
+            logger.warning(
+                f"LLM validation failed for chunk (HTTP): {e.response.status_code} - {e.response.text}"
+            )
+            normalized_chunks.append(chunk)  # Fallback to original chunk
         except Exception as e:
             logger.warning(f"LLM validation failed for chunk: {e}")
             normalized_chunks.append(chunk)  # Fallback to original chunk
