@@ -22,7 +22,7 @@ page = st.sidebar.radio("Go to", ["Process Data", "View Data"])
 if page == "Process Data":
     st.header("Full Pipeline (Auto)")
     st.info(
-        "**Run Full Pipeline**: Automatically downloads the Quran dataset from Kaggle, normalizes transcripts, organizes audio, extracts metadata, and converts to JSONL. No manual inputs needed."
+        "**Run Full Pipeline**: Automatically downloads the Quran dataset from Kaggle, normalizes transcripts, organizes audio, extracts metadata, and converts to JSONL. No manual inputs needed. **Note**: Data is session-only; refreshing the page will clear it."
     )
     if st.button("Run Full Pipeline"):
         with st.spinner("Running full pipeline... This may take a few minutes."):
@@ -32,21 +32,6 @@ if page == "Process Data":
                     st.error(
                         "KAGGLE_API_KEY not set. Please add it to Streamlit secrets or .env."
                     )
-                    st.stop()
-                if not settings.groq_api_key:
-                    st.warning(
-                        "GROQ_API_KEY not set. LLM normalization will be skipped."
-                    )
-
-                # Step 1: Download
-                st.write("Step 1: Downloading dataset...")
-                sources = [
-                    "https://www.kaggle.com/datasets/imrankhan197/the-quran-dataset"
-                ]
-                files = asyncio.run(download_datasets(sources))
-                st.write(f"Downloaded: {files}")
-                if not files:
-                    st.error("Download failed. Check KAGGLE_API_KEY and network.")
                     st.stop()
                 if not settings.groq_api_key:
                     st.warning(
@@ -128,6 +113,7 @@ if page == "Process Data":
                             st.success(
                                 "Full pipeline completed! Check View Data tabs for results."
                             )
+                            st.session_state["data_generated"] = True
                         else:
                             st.error("No processed files found for metadata extraction")
                     else:
@@ -182,8 +168,11 @@ if page == "Process Data":
 elif page == "View Data":
     st.header("View and Filter Data")
     st.info(
-        "**View Data**: Browse and filter processed files. Raw: downloaded originals; Transcripts: cleaned text; Audio: generated sounds; JSONL: AI-ready format."
+        "**View Data**: Browse and filter processed files. Raw: downloaded originals; Transcripts: cleaned text; Audio: generated sounds; JSONL: AI-ready format. **Note**: Data is session-only; use Refresh if tabs are empty."
     )
+    if st.button("Refresh Data"):
+        st.cache_data.clear()
+        st.rerun()
 
     tab1, tab2, tab3, tab4 = st.tabs(["Raw Data", "Transcripts", "Audio", "JSONL"])
 
@@ -228,7 +217,9 @@ elif page == "View Data":
     def get_transcript_files():
         transcript_dir = "data/processed/transcripts"
         if os.path.exists(transcript_dir):
-            return [f for f in os.listdir(transcript_dir) if f.endswith(".txt")]
+            return [
+                f for f in os.listdir(transcript_dir) if f.endswith((".txt", ".csv"))
+            ]
         return []
 
     with tab2:

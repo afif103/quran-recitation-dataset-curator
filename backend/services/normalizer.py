@@ -1,37 +1,32 @@
 import os
 import re
-import requests
 from config.settings import settings
 import logging
+from groq import Groq
 
 logger = logging.getLogger(__name__)
 
 
-async def is_ollama_available() -> bool:
-    try:
-        response = requests.get("http://localhost:11434/api/tags", timeout=5)
-        return response.status_code == 200
-    except Exception:
-        return False
-
-
 async def validate_with_llm(text: str) -> str:
-    if not await is_ollama_available():
-        logger.info("Ollama not available, skipping LLM validation")
+    if not settings.groq_api_key:
+        logger.info("Groq API key not set, skipping LLM validation")
         return text
     try:
-        response = requests.post(
-            "http://localhost:11434/api/generate",
-            json={
-                "model": "llama3.2:3b",
-                "prompt": f"You are an expert in Arabic text normalization. Ensure the text is in proper Arabic script. Normalize this Arabic text: {text}",
-                "stream": False,
-            },
-            timeout=30,
+        client = Groq(api_key=settings.groq_api_key)
+        response = client.chat.completions.create(
+            model="llama3-8b-8192",  # Use a Groq model
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert in Arabic text normalization. Ensure the text is in proper Arabic script.",
+                },
+                {"role": "user", "content": f"Normalize this Arabic text: {text}"},
+            ],
+            max_tokens=500,
+            temperature=0.1,
         )
-        response.raise_for_status()
-        result = response.json()
-        return result.get("response", "").strip()
+        normalized = response.choices[0].message.content.strip()
+        return normalized
     except Exception as e:
         logger.warning(f"LLM validation failed: {e}")
         return text  # Fallback to original
