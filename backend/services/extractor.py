@@ -24,20 +24,40 @@ async def download_datasets(sources: list[str]) -> list[str]:
                     env = os.environ.copy()
                     if settings.kaggle_api_key:
                         env["KAGGLE_API_TOKEN"] = settings.kaggle_api_key
-                    result = subprocess.run(
-                        [
-                            "kaggle",
-                            "datasets",
-                            "download",
-                            dataset,
-                            "-p",
-                            raw_dir,
-                            "--unzip",
-                        ],
-                        capture_output=True,
-                        text=True,
-                        env=env,
-                    )
+                    # Try different kaggle paths for cross-platform
+                    kaggle_cmds = [
+                        "kaggle",
+                        "/home/adminuser/venv/bin/kaggle",
+                        "/usr/local/bin/kaggle",
+                    ]
+                    result = None
+                    for cmd in kaggle_cmds:
+                        try:
+                            result = subprocess.run(
+                                [
+                                    cmd,
+                                    "datasets",
+                                    "download",
+                                    dataset,
+                                    "-p",
+                                    raw_dir,
+                                    "--unzip",
+                                ],
+                                capture_output=True,
+                                text=True,
+                                env=env,
+                                timeout=60,  # Add timeout
+                            )
+                            if result.returncode == 0:
+                                break
+                        except FileNotFoundError:
+                            continue
+                        except subprocess.TimeoutExpired:
+                            continue
+                    if result and result.returncode != 0:
+                        logger.error(
+                            f"Failed to download Kaggle dataset: {result.stderr}"
+                        )
                     if result.returncode == 0:
                         # Find downloaded files
                         files = glob.glob(os.path.join(raw_dir, "*"))
