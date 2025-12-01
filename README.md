@@ -16,7 +16,7 @@ A comprehensive tool for collecting, cleaning, normalizing, and preparing Qur'an
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/quran-recitation-dataset-curator.git
+   git clone https://github.com/afif103//quran-recitation-dataset-curator.git
    cd quran-recitation-dataset-curator
    ```
 
@@ -104,9 +104,6 @@ For production, consider Docker or cloud hosting.
 2. Create a feature branch.
 3. Submit a pull request.
 
-## License
-
-[Add your license here]
 
 ## Acknowledgments
 
