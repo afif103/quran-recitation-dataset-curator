@@ -16,6 +16,7 @@ async def validate_with_llm(text: str) -> str:
     chunks = [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
     normalized_chunks = []
     for chunk in chunks:
+        logger.info(f"Processing chunk of length {len(chunk)}")
         try:
             response = requests.post(
                 "https://api.groq.com/openai/v1/chat/completions",
@@ -24,7 +25,7 @@ async def validate_with_llm(text: str) -> str:
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": "llama3-70b-8192",
+                    "model": "llama3-8b-8192",
                     "messages": [
                         {
                             "role": "user",
@@ -32,7 +33,7 @@ async def validate_with_llm(text: str) -> str:
                         },
                     ],
                     "max_tokens": 300,
-                    "temperature": 0.1,
+                    "temperature": 0.0,
                 },
                 timeout=30,
             )
