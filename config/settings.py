@@ -1,4 +1,4 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from typing import Optional
 
 
@@ -16,9 +16,10 @@ class Settings(BaseSettings):
     s3_bucket_name: Optional[str] = None
     cerebras_model: str = "llama-3.1-8b-instant"
 
-    class Config:
-        env_file = "config/.env"
-        env_file_encoding = "utf-8"
+    model_config = {
+        "env_file": "config/.env",
+        "env_file_encoding": "utf-8",
+    }
 
 
 def get_settings():
