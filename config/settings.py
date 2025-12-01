@@ -5,6 +5,7 @@ from typing import Optional
 class Settings(BaseSettings):
     huggingface_api_key: Optional[str] = None
     groq_api_key: Optional[str] = None
+    cerebras_api_key: Optional[str] = None
     langsmith_api_key: Optional[str] = None
     kaggle_api_key: Optional[str] = None
     log_level: str = "INFO"
@@ -29,6 +30,7 @@ def get_settings():
             return Settings(
                 huggingface_api_key=st.secrets.get("HUGGINGFACE_API_KEY"),
                 groq_api_key=st.secrets.get("GROQ_API_KEY"),
+                cerebras_api_key=st.secrets.get("CEREBRAS_API_KEY"),
                 langsmith_api_key=st.secrets.get("LANGSMITH_API_KEY"),
                 kaggle_api_key=st.secrets.get("KAGGLE_API_KEY"),
                 aws_access_key_id=st.secrets.get("AWS_ACCESS_KEY_ID"),
