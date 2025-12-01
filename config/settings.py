@@ -1,5 +1,6 @@
 from pydantic import BaseSettings
 from typing import Optional
+import os
 
 
 class Settings(BaseSettings):
@@ -20,4 +21,26 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
 
 
-settings = Settings()
+def get_settings():
+    # Try to load from Streamlit secrets if available
+    try:
+        import streamlit as st
+
+        if hasattr(st, "secrets") and st.secrets:
+            return Settings(
+                huggingface_api_key=st.secrets.get("HUGGINGFACE_API_KEY"),
+                groq_api_key=st.secrets.get("GROQ_API_KEY"),
+                langsmith_api_key=st.secrets.get("LANGSMITH_API_KEY"),
+                kaggle_api_key=st.secrets.get("KAGGLE_API_KEY"),
+                aws_access_key_id=st.secrets.get("AWS_ACCESS_KEY_ID"),
+                aws_secret_access_key=st.secrets.get("AWS_SECRET_ACCESS_KEY"),
+                s3_bucket_name=st.secrets.get("S3_BUCKET_NAME"),
+            )
+    except ImportError:
+        pass
+
+    # Fallback to .env
+    return Settings()
+
+
+settings = get_settings()

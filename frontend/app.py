@@ -26,12 +26,27 @@ if page == "Process Data":
     if st.button("Run Full Pipeline"):
         with st.spinner("Running full pipeline..."):
             try:
-                # Step 1: Download (assume Kaggle URL)
+                # Check for API keys
+                if not settings.kaggle_api_key:
+                    st.error(
+                        "KAGGLE_API_KEY not set. Please add it to Streamlit secrets or .env."
+                    )
+                    return
+                if not settings.groq_api_key:
+                    st.warning(
+                        "GROQ_API_KEY not set. LLM normalization will be skipped."
+                    )
+
+                # Step 1: Download
+                st.write("Step 1: Downloading dataset...")
                 sources = [
                     "https://www.kaggle.com/datasets/imrankhan197/the-quran-dataset"
                 ]
                 files = asyncio.run(download_datasets(sources))
                 st.write(f"Downloaded: {files}")
+                if not files:
+                    st.error("Download failed. Check KAGGLE_API_KEY and network.")
+                    return
 
                 # Step 2: Normalize (auto-detect)
                 raw_dir = "data/raw"
@@ -94,15 +109,22 @@ if page == "Process Data":
                             )
                             st.write(f"JSONL created: {jsonl_path}")
 
-                            st.success("Full pipeline completed!")
+                            st.success(
+                                "Full pipeline completed! Check View Data tabs for results."
+                            )
                         else:
                             st.error("No processed files found for metadata extraction")
                     else:
-                        st.error("No text files found to normalize")
+                        st.error(
+                            "No text files found to normalize. Download may have failed."
+                        )
                 else:
                     st.error("Raw data directory not found")
             except Exception as e:
-                st.error(f"Pipeline failed: {e}")
+                st.error(f"Pipeline failed: {str(e)}")
+                st.info(
+                    "Possible causes: Missing API keys, network issues, or cloud storage limits."
+                )
 
     st.info(
         "**Manual Download**: Choose a predefined dataset or enter custom URLs to download. Supports Kaggle and general links. No auto-detection of new datasets; manually add URLs."
