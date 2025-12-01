@@ -24,10 +24,9 @@ async def download_datasets(sources: list[str]) -> list[str]:
                     env = os.environ.copy()
                     if settings.kaggle_api_key:
                         env["KAGGLE_API_TOKEN"] = settings.kaggle_api_key
-                    kaggle_cmd = "C:\\Users\\Rami\\AppData\\Roaming\\Python\\Python313\\Scripts\\kaggle.exe"
                     result = subprocess.run(
                         [
-                            kaggle_cmd,
+                            "kaggle",
                             "datasets",
                             "download",
                             dataset,
