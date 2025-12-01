@@ -11,6 +11,7 @@ from backend.services.normalizer import normalize_transcripts
 from backend.services.audio_handler import organize_audio
 from backend.services.converter import extract_metadata, convert_to_jsonl
 from backend.services.export import export_data
+from config.settings import settings
 
 st.title("Qur'an Recitation Dataset Curator")
 
