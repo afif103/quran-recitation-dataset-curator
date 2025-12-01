@@ -61,7 +61,7 @@ if page == "Process Data":
                 st.write(f"Downloaded: {files}")
                 if not files:
                     st.error("Download failed. Check KAGGLE_API_KEY and network.")
-                    return
+                    st.stop()
 
                 # Step 2: Normalize (auto-detect)
                 raw_dir = "data/raw"
