@@ -176,20 +176,25 @@ elif page == "View Data":
 
     tab1, tab2, tab3, tab4 = st.tabs(["Raw Data", "Transcripts", "Audio", "JSONL"])
 
-    @st.cache_data
+    @st.cache_data(ttl=300)
     def get_raw_files():
-        raw_dir = "data/raw"
-        if os.path.exists(raw_dir):
-            return [
-                f
-                for f in os.listdir(raw_dir)
-                if os.path.isfile(os.path.join(raw_dir, f))
-            ]
-        return []
+        try:
+            raw_dir = "data/raw"
+            if os.path.exists(raw_dir):
+                return [
+                    f
+                    for f in os.listdir(raw_dir)
+                    if os.path.isfile(os.path.join(raw_dir, f))
+                ]
+            return []
+        except Exception as e:
+            st.error(f"Error loading raw files: {e}")
+            return []
 
     with tab1:
         st.subheader("Raw Data Files")
-        raw_files = get_raw_files()
+        with st.spinner("Loading raw files..."):
+            raw_files = get_raw_files()
         if raw_files:
             filter_name = st.text_input("Filter by name", "", key="raw_filter")
             filtered_files = (
@@ -206,25 +211,32 @@ elif page == "View Data":
                 st.write(f"File size: {file_size} bytes")
                 if selected_raw.endswith(".txt") or selected_raw.endswith(".csv"):
                     with open(file_path, "r", encoding="utf-8") as f:
-                        content = f.read()[:1000]  # First 1000 chars
+                        content = f.read()[:500]  # First 500 chars
                     st.text_area("File Content Preview", content, height=300)
                 else:
                     st.info("Binary file, cannot preview.")
         else:
             st.info("No raw files found.")
 
-    @st.cache_data
+    @st.cache_data(ttl=300)
     def get_transcript_files():
-        transcript_dir = "data/processed/transcripts"
-        if os.path.exists(transcript_dir):
-            return [
-                f for f in os.listdir(transcript_dir) if f.endswith((".txt", ".csv"))
-            ]
-        return []
+        try:
+            transcript_dir = "data/processed/transcripts"
+            if os.path.exists(transcript_dir):
+                return [
+                    f
+                    for f in os.listdir(transcript_dir)
+                    if f.endswith((".txt", ".csv"))
+                ]
+            return []
+        except Exception as e:
+            st.error(f"Error loading transcript files: {e}")
+            return []
 
     with tab2:
         st.subheader("Processed Transcripts")
-        transcript_files = get_transcript_files()
+        with st.spinner("Loading transcripts..."):
+            transcript_files = get_transcript_files()
         if transcript_files:
             filter_name = st.text_input("Filter by name", "", key="transcript_filter")
             filtered_files = (
@@ -243,28 +255,33 @@ elif page == "View Data":
                     content = f.read()
                 st.write(f"File size: {len(content)} characters")
                 if content:
-                    st.text_area("Transcript Content", content[:1000], height=300)
-                    if len(content) > 1000:
-                        st.info("Showing first 1000 characters. File is larger.")
+                    st.text_area("Transcript Content", content[:500], height=300)
+                    if len(content) > 500:
+                        st.info("Showing first 500 characters. File is larger.")
                 else:
                     st.warning("File is empty.")
         else:
             st.info("No processed transcripts found.")
 
-    @st.cache_data
+    @st.cache_data(ttl=300)
     def get_audio_files():
-        audio_dir = "data/processed/audio"
-        if os.path.exists(audio_dir):
-            return [
-                f
-                for f in os.listdir(audio_dir)
-                if f.endswith(".wav") or f.endswith(".mp3")
-            ]
-        return []
+        try:
+            audio_dir = "data/processed/audio"
+            if os.path.exists(audio_dir):
+                return [
+                    f
+                    for f in os.listdir(audio_dir)
+                    if f.endswith(".wav") or f.endswith(".mp3")
+                ]
+            return []
+        except Exception as e:
+            st.error(f"Error loading audio files: {e}")
+            return []
 
     with tab3:
         st.subheader("Generated Audio Files")
-        audio_files = get_audio_files()
+        with st.spinner("Loading audio files..."):
+            audio_files = get_audio_files()
         if audio_files:
             filter_name = st.text_input("Filter by name", "", key="audio_filter")
             filtered_files = (
@@ -308,18 +325,23 @@ elif page == "View Data":
         else:
             st.info("No audio files found.")
 
-    @st.cache_data
+    @st.cache_data(ttl=300)
     def get_jsonl_data():
-        jsonl_path = "data/processed/dataset.jsonl"
-        if os.path.exists(jsonl_path):
-            with open(jsonl_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-            return len(lines), lines[0] if lines else None
-        return 0, None
+        try:
+            jsonl_path = "data/processed/dataset.jsonl"
+            if os.path.exists(jsonl_path):
+                with open(jsonl_path, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+                return len(lines), lines[0] if lines else None
+            return 0, None
+        except Exception as e:
+            st.error(f"Error loading JSONL data: {e}")
+            return 0, None
 
     with tab4:
         st.subheader("JSONL Dataset Preview")
-        total_lines, first_line = get_jsonl_data()
+        with st.spinner("Loading JSONL data..."):
+            total_lines, first_line = get_jsonl_data()
         st.write(f"Total entries: {total_lines}")
         if total_lines > 0 and first_line:
             try:
